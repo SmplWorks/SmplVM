@@ -40,6 +40,7 @@ impl VM {
             DB(_) => unreachable!(),
 
             MovC2R(value, dest) => self.set_reg(&dest, value.value_word()),
+            MovR2R(src, dest) => self.set_reg(&dest, *self.get_reg(src)),
 
             _ => todo!(),
         }
@@ -104,5 +105,9 @@ mod test {
     case!(nop, 0x0000u16, 1, "nop", [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(movc2r_byte, 0x0000u16, 1, "mov 0xF3, rb0", [0, 0x0004u16, 0, 0, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
-    case!(movc2r_word, 0x0000u16, 1, "mov 0xF337, r0", [0, 0x0004u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movc2r_word, 0x0000u16, 1, "mov 0xF337, r1", [0, 0x0004u16, 0, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movr2r_byte, 0x0000u16, 2, "mov 0xF3, rb2\nmov rb2, rb3",
+        [0, 0x0006u16, 0, 0, 0, 0, 0x00F3, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movr2r_word, 0x0000u16, 2, "mov 0xF337, r4\nmov r4, r5",
+        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0xF337, 0xF337, 0, 0, 0, 0, 0, 0], []);
 }
