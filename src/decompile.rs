@@ -30,6 +30,23 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
 
+        0x07 => Ok(Add(
+            Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x08 => Ok(Add(
+            Register::from_src(Width::Word, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
+        0x09 => Ok(Sub(
+            Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x0A => Ok(Sub(
+            Register::from_src(Width::Word, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
+        
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
 
