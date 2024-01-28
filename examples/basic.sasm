@@ -1,0 +1,24 @@
+/* Basic example 
+ * B A S I C
+ */
+// Set state
+mov 0x0CF3, r0
+mov 0x600D, r1
+mov 0x0D, rb2
+mov 256, r3
+
+// Perform arithmetic
+add rb0, rb1 // r1 := 0x6000
+sub r0, r2 // r2 := 0x0D00
+
+// Save values
+mov rb0, [r3]
+
+// And read them
+mov [r3], rb4
+
+// Infinite loop
+mov -2, r5
+jmp r5
+
+dw 0x600D, 0xF337, 0x600D, 0xB007

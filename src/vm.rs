@@ -139,7 +139,7 @@ mod test {
     use super::*;
 
     macro_rules! case {
-        ($ident:ident, $reset:literal, $reps:literal, $code:literal, $regs:expr, $mem:expr) => {
+        ($ident:ident, $reset:literal, $reps:literal, $code:expr, $regs:expr, $mem:expr) => {
             #[test]
             fn $ident() {
                 let mut ram = vec![0; 0x10000];
@@ -189,4 +189,7 @@ mod test {
 
     case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
         [0, 0xF337u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+
+    case!(basic, 0x0000, 9, &std::fs::read_to_string(std::path::Path::new("./examples/basic.sasm")).unwrap(),
+        [0, 0x001C, 0, 0, 0x0CF3, 0x6000, 0x0CE6, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0, 0, 0], [(256, 0xF3)]);
 }
