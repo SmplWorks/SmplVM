@@ -21,6 +21,13 @@ impl VM {
         // TODO: Set RINFO
     }
 
+    pub fn execute_n(&mut self, n : usize) -> Result<()> {
+        for _ in 0..n {
+            self.execute_next()?;
+        }
+        Ok(())
+    }
+
     pub fn execute_next(&mut self) -> Result<()> {
         let inst = self.decompile_next()?;
         Ok(self.execute_instr(&inst))
@@ -63,30 +70,28 @@ impl VM {
 mod test {
     use super::*;
 
-    #[test]
-    fn reset() {
-        let mut ram = vec![0; 0x10000];
-        ram[0xFFFE] = 0x37;
-        ram[0xFFFF] = 0xF3;
+    macro_rules! case {
+        ($ident:ident, $reset:literal, $reps:literal, $code:literal, $regs:expr, $mem:expr) => {
+            #[test]
+            fn $ident() {
+                let mut ram = vec![0; 0x10000];
+                ram[0xFFFE] = $reset as u8;
+                ram[0xFFFF] = ($reset >> 8) as u8;
 
-        let mut vm = VM::new(ram);
-        vm.reset();
+                sasm_lib::compile($code).unwrap().into_iter().enumerate()
+                    .for_each(|(idx, b)| ram[idx] = b);
 
-        assert_eq!(*vm.get_reg(&Register::RIP), 0xF337);
+                let mut vm = VM::new(ram);
+                vm.reset();
+                let res = vm.execute_n($reps);
+
+                assert!(res.is_ok());
+                assert_eq!(vm.registers, $regs, "registers");
+                $mem.into_iter().for_each(|(addr, b)| assert_eq!(vm.get_mem(addr), b));
+            }
+        };
     }
 
-    #[test]
-    fn nop() {
-        let ram = vec![0; 0x10000];
-        // TODO: Load "nop" to RAM
-
-        let mut vm = VM::new(ram);
-        vm.reset();
-
-        let inst = vm.decompile_next();
-        assert_eq!(inst, Ok(Instruction::Nop));
-
-        vm.execute_instr(&inst.unwrap());
-        // TODO: Check vm state 
-    }
+    case!(reset, 0xF337u16, 0, "", [0, 0xF337u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(nop, 0x0000u16, 1, "nop", [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 }
