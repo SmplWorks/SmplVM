@@ -47,14 +47,14 @@ impl VM {
                 => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
             Add(src, dest) => self.execute_add(src, dest),
+            Sub(src, dest) => self.execute_sub(src, dest),
             
             Jmp(reg) => self.set_reg(&Register::RIP, *self.get_reg(reg)),
-
-            _ => todo!(),
         }
     }
 
     fn execute_add(&mut self, src : &Register, dest : &Register) {
+        // TODO: Repeated code with execute_sub
         let src_value = *self.get_reg(src);
         let dest_value = *self.get_reg(dest);
         let (res, zero, negative,  overflow) = match src.width() {
@@ -64,6 +64,25 @@ impl VM {
             },
             Width::Word => {
                 let (res, overflow) = src_value.overflowing_add(dest_value);
+                (res, res == 0, (res & 0x8000) == 0x8000, overflow)
+            }
+        };
+
+        self.set_flags(zero, negative, overflow);
+        self.set_reg(dest, res);
+    }
+
+    fn execute_sub(&mut self, src : &Register, dest : &Register) {
+        // TODO: Repeated code with execute_add
+        let src_value = *self.get_reg(src);
+        let dest_value = *self.get_reg(dest);
+        let (res, zero, negative,  overflow) = match src.width() {
+            Width::Byte => {
+                let (res, overflow) = (src_value as u8).overflowing_sub(dest_value as u8);
+                (res as u16, res == 0, (res & 0x80) == 0x80, overflow)
+            },
+            Width::Word => {
+                let (res, overflow) = src_value.overflowing_sub(dest_value);
                 (res, res == 0, (res & 0x8000) == 0x8000, overflow)
             }
         };
@@ -156,13 +175,17 @@ mod test {
         [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0], [(0x0000, 0x37)]);
 
     case!(add_byte, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd rb8, rb9",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0x0, 0xF337, 0x1148, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x1148, 0, 0], []);
     case!(add_word, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd r8, r9",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0x0, 0xF337, 0x0448, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x0448, 0, 0], []);
     case!(add_byte_overflow_and_zero, 0x0000u16, 3, "mov 0xFF, rb10\nmov 0x01, rb11\nadd rb10, rb11",
-        [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0, 0, 0, 0, 0, 0x0, 0, 0, 0xFF, 0x00], []);
+        [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0x00], []);
     case!(add_byte_negative, 0x0000u16, 3, "mov 0x0F, rb10\nmov 0xF0, rb11\nadd rb10, rb11",
-        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0, 0, 0, 0, 0, 0x0, 0, 0, 0x0F, 0xFF], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0F, 0xFF], []);
+    case!(sub_byte, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub rb0, rb1",
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0xF337, 0x1126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(sub_word, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub r0, r1",
+        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0xF337, 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
         [0, 0xF337u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
