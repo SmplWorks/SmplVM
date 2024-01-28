@@ -21,6 +21,14 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
+        0x05 => Ok(MovM2R(
+            Register::from_src(Width::Word, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x06 => Ok(MovR2M(
+            Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
 
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
