@@ -41,10 +41,12 @@ fn main() -> Result<()> {
 }
 */
 
+use std::num::NonZeroU32;
+use std::rc::Rc;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder, WindowButtons},
+    window::WindowBuilder,
     dpi::LogicalSize,
 };
 use utils::{Error, Result};
@@ -60,9 +62,13 @@ fn main() -> Result<()> {
         // .with_window_icon(icon) // TODO
         .with_active(true)
         ;
-    let window = builder.build(&event_loop).map_err(|err| Error::External(err.to_string()))?;
+    let window = Rc::new(builder.build(&event_loop).map_err(|err| Error::External(err.to_string()))?);
+    let context = softbuffer::Context::new(window.clone()).map_err(|err| Error::External(err.to_string()))?;
+    let mut surface = softbuffer::Surface::new(&context, window.clone()).map_err(|err| Error::External(err.to_string()))?;
+    surface.resize(NonZeroU32::new(64 * 8).unwrap(), NonZeroU32::new(32 * 8).unwrap()).unwrap();
 
     event_loop.set_control_flow(ControlFlow::Poll);
+
     event_loop.run(move |event, elwt| {
         match event {
             Event::WindowEvent { event: WindowEvent::CloseRequested, .. }
@@ -72,8 +78,28 @@ fn main() -> Result<()> {
                 // window.request_redraw();
             },
 
-            Event::WindowEvent { event: WindowEvent::RedrawRequested, .. }
-                => (),
+            Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
+                let (width, height) = {
+                    let size = window.inner_size();
+                    (size.width, size.height)
+                };
+                surface
+                    .resize(
+                        NonZeroU32::new(width).unwrap(),
+                        NonZeroU32::new(height).unwrap(),
+                    )
+                    .unwrap();
+
+                let mut buffer = surface.buffer_mut().unwrap();
+                for x in 0..20usize {
+                    for y in 0..20usize {
+                        let (red, green, blue) = (0xFF, 0xFF, 0xFF);
+                        buffer[x + y * width as usize] = (red << 16) | (green << 8) | blue;
+                    }
+                }
+
+                buffer.present().unwrap();
+            }
 
             _ => (),
         }
