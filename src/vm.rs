@@ -1,4 +1,4 @@
-use smpl_core_common::{Instruction, Register};
+use smpl_core_common::{Instruction, Register, Width};
 use crate::{decompile, utils::Result};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,6 +39,8 @@ impl VM {
             Nop => (),
             DB(_) => unreachable!(),
 
+            MovC2R(value, dest) => self.set_reg(&dest, value.value_word()),
+
             _ => todo!(),
         }
     }
@@ -50,9 +52,15 @@ impl VM {
     }
 
     pub fn set_reg(&mut self, reg : &Register, value : u16) {
+        *self.get_reg_mut(reg) = match reg.width() {
+            Width::Byte => (value as u8) as u16,
+            Width::Word => value,
+        }
+    }
+
+    pub fn get_reg_mut(&mut self, reg : &Register) -> &mut u16 {
         let idx = reg.compile_src() as usize;
-        let reg = self.registers.get_mut(idx).unwrap();
-        *reg = value;
+        self.registers.get_mut(idx).unwrap()
     }
 
     pub fn get_reg(&self, reg : &Register) -> &u16 {
@@ -94,4 +102,7 @@ mod test {
 
     case!(reset, 0xF337u16, 0, "", [0, 0xF337u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(nop, 0x0000u16, 1, "nop", [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+
+    case!(movc2r_byte, 0x0000u16, 1, "mov 0xF3, rb0", [0, 0x0004u16, 0, 0, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movc2r_word, 0x0000u16, 1, "mov 0xF337, r0", [0, 0x0004u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 }
