@@ -1,5 +1,5 @@
 use smpl_core_common::{Instruction, Register};
-use crate::{decompile, utils::{Error, Result}};
+use crate::{decompile, utils::Result};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(non_snake_case)]
@@ -22,15 +22,24 @@ impl VM {
     }
 
     pub fn execute_next(&mut self) -> Result<()> {
-        let (inst, skip) = decompile(&self);
-        self.set_reg(&Register::RIP, self.get_reg(&Register::RIP).wrapping_add(skip));
+        let inst = self.decompile_next()?;
+        Ok(self.execute_instr(&inst))
+    }
 
+    pub fn execute_instr(&mut self, inst : &Instruction) {
         use Instruction::*;
-        match inst? {
+        match inst {
+            Nop => (),
             DB(_) => unreachable!(),
 
             _ => todo!(),
         }
+    }
+
+    pub fn decompile_next(&mut self) -> Result<Instruction> {
+        let (inst, skip) = decompile(&self, *self.get_reg(&Register::RIP));
+        self.set_reg(&Register::RIP, self.get_reg(&Register::RIP).wrapping_add(skip));
+        inst
     }
 
     pub fn set_reg(&mut self, reg : &Register, value : u16) {
@@ -64,5 +73,20 @@ mod test {
         vm.reset();
 
         assert_eq!(*vm.get_reg(&Register::RIP), 0xF337);
+    }
+
+    #[test]
+    fn nop() {
+        let ram = vec![0; 0x10000];
+        // TODO: Load "nop" to RAM
+
+        let mut vm = VM::new(ram);
+        vm.reset();
+
+        let inst = vm.decompile_next();
+        assert_eq!(inst, Ok(Instruction::Nop));
+
+        vm.execute_instr(&inst.unwrap());
+        // TODO: Check vm state 
     }
 }

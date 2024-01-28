@@ -1,5 +1,8 @@
 #[derive(thiserror::Error, Debug, Clone, PartialEq, Eq)]
 pub enum Error {
+    #[error("found invalid opcode {0} (with operands {1})")]
+    InvalidOpcode(u8, u8),
+
     #[error("{0}")]
     CoreCommon(smpl_core_common::utils::Error),
 
