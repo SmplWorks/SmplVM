@@ -5,13 +5,15 @@ use crate::{decompile, utils::Result};
 #[allow(non_snake_case)]
 pub struct VM {
     registers : [u16; 16],
+
     ram : Vec<u8>,
     rom : [u8; 2],
+    display_buffer : [u8; 64 * 32],
 }
 
 impl VM {
     pub fn new(ram : Vec<u8>, rom : [u8; 2]) -> Self {
-        Self { registers: [0; 16], ram, rom }
+        Self { registers: [0; 16], ram, rom, display_buffer: [0; 64 * 32] }
     }
 
     pub fn reset(&mut self) {
@@ -129,15 +131,25 @@ impl VM {
     }
 
     pub fn set_mem(&mut self, addr : u16, value : u8) {
-        let Some(b) = self.ram.get_mut(addr as usize) else { return };
+        let b = if addr < 0x8000 { // RAM
+            self.ram.get_mut(addr as usize)
+        } else if addr < 0x9000 { // Display
+            self.display_buffer.get_mut((addr - 0x9000) as usize)
+        } else {
+            return
+        };
+
+        let Some(b) = b else { return };
         *b = value;
     }
 
     pub fn get_mem(&self, addr : u16) -> u8 {
-        let b = if addr < 0xFFFE {
+        let b = if addr < 0x8000 { // RAM
             self.ram.get(addr as usize)
-        } else {
+        } else if addr >= 0xFFFE { // ROM
             self.rom.get((addr - 0xFFFE) as usize)
+        } else {
+            None
         }; 
 
         b.map_or(0, |b| *b) // None if out of bounds, undefined behaviour // TODO: Return random? 
