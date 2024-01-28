@@ -46,14 +46,14 @@ impl VM {
             MovR2M(src, dest)
                 => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
-            Add(src, dest) => self.execute_add(src, dest),
-            Sub(src, dest) => self.execute_sub(src, dest),
+            Add(src, dest) => self.execute_add(src, dest, true),
+            Sub(src, dest) => self.execute_sub(src, dest, true),
             
-            Jmp(reg) => self.set_reg(&Register::RIP, *self.get_reg(reg)),
+            Jmp(reg) => self.execute_add(reg, &Register::RIP, false),
         }
     }
 
-    fn execute_add(&mut self, src : &Register, dest : &Register) {
+    fn execute_add(&mut self, src : &Register, dest : &Register, flags : bool) {
         // TODO: Repeated code with execute_sub
         let src_value = *self.get_reg(src);
         let dest_value = *self.get_reg(dest);
@@ -68,11 +68,13 @@ impl VM {
             }
         };
 
-        self.set_flags(zero, negative, overflow);
+        if flags {
+            self.set_flags(zero, negative, overflow);
+        }
         self.set_reg(dest, res);
     }
 
-    fn execute_sub(&mut self, src : &Register, dest : &Register) {
+    fn execute_sub(&mut self, src : &Register, dest : &Register, flags : bool) {
         // TODO: Repeated code with execute_add
         let src_value = *self.get_reg(src);
         let dest_value = *self.get_reg(dest);
@@ -87,7 +89,9 @@ impl VM {
             }
         };
 
-        self.set_flags(zero, negative, overflow);
+        if flags {
+            self.set_flags(zero, negative, overflow);
+        }
         self.set_reg(dest, res);
     }
 
@@ -188,8 +192,8 @@ mod test {
         [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0xF337, 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
-        [0, 0xF337u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0xF33D, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
-    case!(basic, 0x0000, 9, &std::fs::read_to_string(std::path::Path::new("./examples/basic.sasm")).unwrap(),
+    case!(basic, 0x0000, 15, &std::fs::read_to_string(std::path::Path::new("./examples/basic.sasm")).unwrap(),
         [0, 0x001C, 0, 0, 0x0CF3, 0x6000, 0x0CE6, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0, 0, 0], [(256, 0xF3)]);
 }
