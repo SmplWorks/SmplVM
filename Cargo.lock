@@ -133,7 +133,7 @@ dependencies = [
 [[package]]
 name = "smpl_core_common"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#357480704779ed7c26f43805e4423d7e283e57c7"
+source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#68405a80b02cd1b25870675c97a58a72fd1598e0"
 dependencies = [
  "thiserror",
 ]
