@@ -1,9 +1,18 @@
-use smpl_core_common::Instruction;
+use smpl_core_common::{Instruction, Register, Value, Width};
 use crate::{VM, utils::{Error, Result}};
 
 pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
+    use Instruction::*;
     let inst = match vm.get_mem(addr) {
-        0x00 => Ok(Instruction::Nop),
+        0x00 => Ok(Nop),
+        0x01 => Ok(MovC2R(
+            Value::byte(vm.get_mem(addr + 2)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x02 => Ok(MovC2R(
+            Value::word((vm.get_mem(addr + 2) as u16) | ((vm.get_mem(addr + 3) as u16) << 8)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
 
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
