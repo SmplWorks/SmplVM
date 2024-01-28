@@ -4,11 +4,11 @@ use crate::{decompile, utils::Result};
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(non_snake_case)]
 pub struct VM {
-    registers : [u16; 16],
+    pub registers : [u16; 16],
 
-    ram : Vec<u8>,
-    rom : [u8; 2],
-    display_buffer : [u8; 64 * 32],
+    pub ram : Vec<u8>,
+    pub rom : [u8; 2],
+    pub display_buffer : [u8; 64 * 32],
 }
 
 impl VM {

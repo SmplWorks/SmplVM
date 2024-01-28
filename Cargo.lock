@@ -142,6 +142,7 @@ dependencies = [
 name = "smpl_vm"
 version = "0.0.1"
 dependencies = [
+ "clap",
  "sasm",
  "smpl_core_common",
  "thiserror",
