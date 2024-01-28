@@ -41,6 +41,10 @@ impl VM {
 
             MovC2R(value, dest) => self.set_reg(&dest, value.value_word()),
             MovR2R(src, dest) => self.set_reg(&dest, *self.get_reg(src)),
+            MovM2R(src, dest)
+                => self.set_reg(&dest, self.get_mem(*self.get_reg(src)) as u16),
+            MovR2M(src, dest)
+                => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
             _ => todo!(),
         }
@@ -67,6 +71,11 @@ impl VM {
     pub fn get_reg(&self, reg : &Register) -> &u16 {
         let idx = reg.compile_src() as usize;
         self.registers.get(idx).unwrap()
+    }
+
+    pub fn set_mem(&mut self, addr : u16, value : u8) {
+        let Some(b) = self.ram.get_mut(addr as usize) else { return };
+        *b = value;
     }
 
     pub fn get_mem(&self, addr : u16) -> u8 {
@@ -110,4 +119,8 @@ mod test {
         [0, 0x0006u16, 0, 0, 0, 0, 0x00F3, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(movr2r_word, 0x0000u16, 2, "mov 0xF337, r4\nmov r4, r5",
         [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0xF337, 0xF337, 0, 0, 0, 0, 0, 0], []);
+    case!(movm2r_word, 0x0000u16, 1, "mov [r0], rb6",
+        [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, Instruction::movm2r(Register::r0(), Register::rb6()).unwrap().opcode() as u16, 0, 0, 0, 0, 0], []);
+    case!(movr2m_word, 0x0000u16, 2, "mov 0xF337, r7\nmov rb7, [r0]",
+        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0], [(0x0000, 0x37)]);
 }
