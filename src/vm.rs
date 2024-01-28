@@ -6,11 +6,12 @@ use crate::{decompile, utils::Result};
 pub struct VM {
     registers : [u16; 16],
     ram : Vec<u8>,
+    rom : [u8; 2],
 }
 
 impl VM {
-    pub fn new(ram : Vec<u8>) -> Self {
-        Self { registers: [0; 16], ram }
+    pub fn new(ram : Vec<u8>, rom : [u8; 2]) -> Self {
+        Self { registers: [0; 16], ram, rom }
     }
 
     pub fn reset(&mut self) {
@@ -133,8 +134,13 @@ impl VM {
     }
 
     pub fn get_mem(&self, addr : u16) -> u8 {
-        self.ram.get(addr as usize) // None if out of bounds, undefined behaviour
-            .map_or(0, |b| *b) // TODO: Return random?
+        let b = if addr < 0xFFFE {
+            self.ram.get(addr as usize)
+        } else {
+            self.rom.get((addr - 0xFFFE) as usize)
+        }; 
+
+        b.map_or(0, |b| *b) // None if out of bounds, undefined behaviour // TODO: Return random? 
     }
 }
 
@@ -147,13 +153,12 @@ mod test {
             #[test]
             fn $ident() {
                 let mut ram = vec![0; 0x10000];
-                ram[0xFFFE] = $reset as u8;
-                ram[0xFFFF] = ($reset >> 8) as u8;
+                let rom = [$reset as u8, ($reset >> 8) as u8];
 
                 sasm_lib::compile($code).unwrap().into_iter().enumerate()
                     .for_each(|(idx, b)| ram[idx] = b);
 
-                let mut vm = VM::new(ram);
+                let mut vm = VM::new(ram, rom);
                 vm.reset();
                 let res = vm.execute_n($reps);
 
