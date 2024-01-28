@@ -47,6 +47,8 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
         
+        0x0B => Ok(Jmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
+
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
 
