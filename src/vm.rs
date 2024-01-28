@@ -46,6 +46,8 @@ impl VM {
             MovR2M(src, dest)
                 => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
+            Jmp(reg) => self.set_reg(&Register::RIP, *self.get_reg(reg)),
+
             _ => todo!(),
         }
     }
@@ -123,4 +125,7 @@ mod test {
         [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, Instruction::movm2r(Register::r0(), Register::rb6()).unwrap().opcode() as u16, 0, 0, 0, 0, 0], []);
     case!(movr2m_word, 0x0000u16, 2, "mov 0xF337, r7\nmov rb7, [r0]",
         [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0], [(0x0000, 0x37)]);
+
+    case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
+        [0, 0xF337u16, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 }
