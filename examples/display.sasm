@@ -1,0 +1,44 @@
+mov 65, rb0 // 'A'
+mov 0x8000, r1 // Point to display
+mov 2, r2
+mov rb0, [r1]
+
+add r2, r1
+mov 104, rb0 // 'h'
+mov rb0, [r1]
+
+add r2, r1
+mov 111, rb0 // 'o'
+mov rb0, [r1]
+
+add r2, r1
+mov 121, rb0 // 'y'
+mov rb0, [r1]
+
+add r2, r1
+mov 32, rb0 // ' '
+mov rb0, [r1]
+
+add r2, r1
+mov 116, rb0 // 't'
+mov rb0, [r1]
+
+add r2, r1
+mov 104, rb0 // 'h'
+mov rb0, [r1]
+
+add r2, r1
+mov 101, rb0 // 'e'
+mov rb0, [r1]
+
+add r2, r1
+mov 114, rb0 // 'r'
+mov rb0, [r1]
+
+add r2, r1
+mov 101, rb0 // 'e'
+mov rb0, [r1]
+
+add r2, r1
+mov 33, rb0 // '!'
+mov rb0, [r1]

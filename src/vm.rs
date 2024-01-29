@@ -1,19 +1,21 @@
+use std::sync::{Arc, Mutex};
+
 use smpl_core_common::{Instruction, Register, Width};
 use crate::{decompile, utils::Result};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct VM {
     pub registers : [u16; 16],
 
     pub ram : Vec<u8>,
     pub rom : [u8; 2],
-    pub display_buffer : [u8; 64 * 32],
+    pub display_buffer : Arc<Mutex<[u8; 64 * 32 * 2]>>,
 }
 
 impl VM {
-    pub fn new(ram : Vec<u8>, rom : [u8; 2]) -> Self {
-        Self { registers: [0; 16], ram, rom, display_buffer: [0; 64 * 32] }
+    pub fn new(ram : Vec<u8>, rom : [u8; 2], display_buffer : Arc<Mutex<[u8; 64 * 32 * 2]>>) -> Self {
+        Self { registers: [0; 16], ram, rom, display_buffer }
     }
 
     pub fn reset(&mut self) {
@@ -131,16 +133,16 @@ impl VM {
     }
 
     pub fn set_mem(&mut self, addr : u16, value : u8) {
-        let b = if addr < 0x8000 { // RAM
-            self.ram.get_mut(addr as usize)
+        if addr < 0x8000 { // RAM
+            if let Some(b) = self.ram.get_mut(addr as usize) {
+                *b = value;
+            }
         } else if addr < 0x9000 { // Display
-            self.display_buffer.get_mut((addr - 0x9000) as usize)
-        } else {
-            return
-        };
-
-        let Some(b) = b else { return };
-        *b = value;
+            let mut buffer = self.display_buffer.lock().unwrap();
+            if let Some(b) = buffer.get_mut((addr - 0x8000) as usize) {
+                *b = value;
+            }
+        }
     }
 
     pub fn get_mem(&self, addr : u16) -> u8 {
@@ -166,11 +168,12 @@ mod test {
             fn $ident() {
                 let mut ram = vec![0; 0x10000];
                 let rom = [$reset as u8, ($reset >> 8) as u8];
+                let display_buffer = Arc::new(Mutex::new([0; 64 * 32 * 2]));
 
                 sasm_lib::compile($code).unwrap().into_iter().enumerate()
                     .for_each(|(idx, b)| ram[idx] = b);
 
-                let mut vm = VM::new(ram, rom);
+                let mut vm = VM::new(ram, rom, display_buffer);
                 vm.reset();
                 let res = vm.execute_n($reps);
 

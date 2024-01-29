@@ -64,9 +64,12 @@ mod test {
         ($ident:ident, $code:literal, $vm:ident, $res:ident, $expect:ident, $assert:block) => {
             #[test]
             fn $ident() {
+								use std::sync::{Arc, Mutex};
+
                 let ram = sasm_lib::compile($code).unwrap();
                 let rom = [0, 0];
-                let mut $vm = VM::new(ram, rom);
+                let display_buffer = Arc::new(Mutex::new([0; 64 * 32 * 2]));
+                let mut $vm = VM::new(ram, rom, display_buffer);
                 $vm.set_reg(&smpl_core_common::Register::RIP, 0x0000);
 
                 let $expect = sasm_lib::parse($code).unwrap()[0];
