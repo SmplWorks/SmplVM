@@ -1,0 +1,3 @@
+in_path = "basic.sasm"
+compile = true
+display = false

@@ -25,11 +25,18 @@ fn read_file(fpath : &Path) -> Result<Vec<u8>> {
     std::fs::read(fpath).map_err(|err| utils::Error::External(err.to_string()))
 }
 
+fn main_loop(mut vm : VM) -> Result<()> {
+    loop {
+        vm.execute_next()?;
+    }
+}
+
 fn main() -> Result<()> {
     let args = utils::Args::load();
+    let cfg = utils::Config::load(&args)?;
 
-    let in_path = Path::new(&args.in_path);
-    let ram = if args.compile {
+    let in_path = Path::new(&cfg.in_path);
+    let ram = if cfg.compile {
         compile_file(in_path)?
     } else {
         read_file(in_path)?
@@ -37,12 +44,12 @@ fn main() -> Result<()> {
 
     let display_buffer = Arc::new(Mutex::new([0; 64 * 32 * 2]));
 
-    let mut vm = VM::new(ram, [0, 0], display_buffer.clone());
+    let vm = VM::new(ram, [0, 0], display_buffer.clone());
 
-    std::thread::spawn(move || {
-        vm.execute_n(args.reps).unwrap(); // TODO: Handle panic
-        dbg!(vm.registers);
-    });
-
-    display(display_buffer.clone())
+    if cfg.display && !args.no_display {
+        std::thread::spawn(move || main_loop(vm).unwrap()); // TODO: Handle error
+        display(display_buffer.clone())
+    } else {
+        main_loop(vm)
+    }
 }

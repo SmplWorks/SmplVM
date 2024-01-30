@@ -4,16 +4,13 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    /// Path to file to execute
-    pub in_path: String,
+    /// Path to the configuration file
+    #[arg(default_value = "config.toml")]
+    pub config_path : String,
 
-    /// Treat file as .sasm and compile it
-    #[arg(short, long, default_value_t = false)]
-    pub compile : bool,
-    
-    /// Number of instructions to execute
-    #[arg(long)]
-    pub reps : usize,
+    /// Disable display
+    #[arg(long, default_value_t = false)]
+    pub no_display : bool,
 }
 
 impl Args {
