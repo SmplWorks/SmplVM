@@ -9,7 +9,7 @@ mov 256, r3
 
 // Perform arithmetic
 add rb0, rb1 // r1 := 0x6000
-sub r0, r2 // r2 := 0x0D00
+sub r0, r2 // r2 := 0xF31A
 
 // Save values
 mov rb0, [r3]

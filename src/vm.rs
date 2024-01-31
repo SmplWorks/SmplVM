@@ -66,11 +66,11 @@ impl VM {
         let dest_value = *self.get_reg(dest);
         let (res, zero, negative,  overflow) = match src_value.width() {
             Width::Byte => {
-                let (res, overflow) = src_value.value_byte(0).overflowing_add(dest_value as u8);
+                let (res, overflow) = (dest_value as u8).overflowing_add(src_value.value_byte(0));
                 (res as u16, res == 0, (res & 0x80) == 0x80, overflow)
             },
             Width::Word => {
-                let (res, overflow) = src_value.value_word().overflowing_add(dest_value);
+                let (res, overflow) = dest_value.overflowing_add(src_value.value_word());
                 (res, res == 0, (res & 0x8000) == 0x8000, overflow)
             }
         };
@@ -86,11 +86,11 @@ impl VM {
         let dest_value = *self.get_reg(dest);
         let (res, zero, negative,  overflow) = match src_value.width() {
             Width::Byte => {
-                let (res, overflow) = src_value.value_byte(0).overflowing_sub(dest_value as u8);
+                let (res, overflow) = (dest_value as u8).overflowing_sub(src_value.value_byte(0));
                 (res as u16, res == 0, (res & 0x80) == 0x80, overflow)
             },
             Width::Word => {
-                let (res, overflow) = src_value.value_word().overflowing_sub(dest_value);
+                let (res, overflow) = dest_value.overflowing_sub(src_value.value_word());
                 (res, res == 0, (res & 0x8000) == 0x8000, overflow)
             }
         };
@@ -211,18 +211,20 @@ mod test {
         [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x1148, 0, 0], []);
     case!(add_r2r_word, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd r8, r9",
         [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x0448, 0, 0], []);
+
     case!(add_byte_overflow_and_zero, 0x0000u16, 3, "mov 0xFF, rb10\nmov 0x01, rb11\nadd rb10, rb11",
         [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0x00], []);
     case!(add_r2r_byte_negative, 0x0000u16, 3, "mov 0x0F, rb10\nmov 0xF0, rb11\nadd rb10, rb11",
         [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0F, 0xFF], []);
+
     case!(sub_c2r_byte, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x11, rb0",
         [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0xF326, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_c2r_word, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x1111, r0",
-        [0, 0x0008u16, 0, VM::calc_flags(false, false, true), 0x1DDA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x0008u16, 0, VM::calc_flags(false, true, false), 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_r2r_byte, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub rb0, rb1",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0xF337, 0x1126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, true, true), 0xF337, 0x11DA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_r2r_word, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub r0, r1",
-        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0xF337, 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0xF337, 0x1DDA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(ajmp, 0x0000u16, 2, "mov 0xF337, r0\najmp r0",
         [0, 0xF337, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
@@ -230,5 +232,5 @@ mod test {
         [0, 0xF33D, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(basic, 0x0000, 15, &std::fs::read_to_string(std::path::Path::new("./examples/basic.sasm")).unwrap(),
-        [0, 0x001C, 0, 0, 0x0CF3, 0x6000, 0x0CE6, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0, 0, 0], [(256, 0xF3)]);
+        [0, 0x001C, 0, VM::calc_flags(false, true, true), 0x0CF3, 0x6000, 0xF31A, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0, 0, 0], [(256, 0xF3)]);
 }
