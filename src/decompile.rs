@@ -30,24 +30,42 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
 
-        0x07 => Ok(Add(
+        0x07 => Ok(AddC2R(
+            Value::byte(vm.get_mem(addr + 2)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x08 => Ok(AddC2R(
+            Value::word((vm.get_mem(addr + 2) as u16) | ((vm.get_mem(addr + 3) as u16) << 8)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
+        0x09 => Ok(AddR2R(
             Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x08 => Ok(Add(
+        0x0A => Ok(AddR2R(
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
-        0x09 => Ok(Sub(
+
+        0x0B => Ok(SubC2R(
+            Value::byte(vm.get_mem(addr + 2)),
+            Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
+        )),
+        0x0C => Ok(SubC2R(
+            Value::word((vm.get_mem(addr + 2) as u16) | ((vm.get_mem(addr + 3) as u16) << 8)),
+            Register::from_dest(Width::Word, vm.get_mem(addr + 1))
+        )),
+        0x0D => Ok(SubR2R(
             Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x0A => Ok(Sub(
+        0x0E => Ok(SubR2R(
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
         
-        0x0B => Ok(Jmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
+        0x0F => Ok(AJmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
+        0x10 => Ok(Jmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
 
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
@@ -72,7 +90,7 @@ mod test {
                 let mut $vm = VM::new(ram, rom, display_buffer);
                 $vm.set_reg(&smpl_core_common::Register::RIP, 0x0000);
 
-                let $expect = sasm_lib::parse($code).unwrap()[0];
+                let $expect = sasm_lib::parse($code).unwrap().0[0];
                 let $res = $vm.decompile_next();
 
                 $assert
@@ -101,10 +119,15 @@ mod test {
     case!(movm2r, "mov [r6], rb7");
     case!(movr2m, "mov rb8, [r9]");
 
-    case!(add_byte, "add rb10, rb11");
-    case!(add_word, "add r0, r1");
-    case!(sub_byte, "sub r0, r1");
-    case!(sub_word, "sub r0, r1");
+    case!(addc2r_byte, "add 0xF3, rb11");
+    case!(addc2r_word, "add 0xF337, r1");
+    case!(addr2r_byte, "add rb10, rb11");
+    case!(addr2r_word, "add r0, r1");
+    case!(subc2r_byte, "sub 0xF3, rb11");
+    case!(subc2r_word, "sub 0xF337, r1");
+    case!(subr2r_byte, "sub r0, r1");
+    case!(subr2r_word, "sub r0, r1");
 
+    case!(ajmp, "ajmp r0");
     case!(jmp, "jmp r0");
 }

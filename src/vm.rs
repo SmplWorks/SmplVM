@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use smpl_core_common::{Instruction, Register, Width};
+use smpl_core_common::{Instruction, Register, Value, Width};
 use crate::{decompile, utils::Result};
 
 #[derive(Debug, Clone)]
@@ -51,24 +51,26 @@ impl VM {
             MovR2M(src, dest)
                 => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
-            Add(src, dest) => self.execute_add(src, dest, true),
-            Sub(src, dest) => self.execute_sub(src, dest, true),
+            AddC2R(value, dest) => self.execute_add(value, dest, true),
+            AddR2R(src, dest) => self.execute_add(&self.get_reg_as_value(src), dest, true),
+            SubC2R(value, dest) => self.execute_sub(value, dest, true),
+            SubR2R(src, dest) => self.execute_sub(&self.get_reg_as_value(src), dest, true),
             
-            Jmp(reg) => self.execute_add(reg, &Register::RIP, false),
+            AJmp(reg) => self.set_reg(&Register::RIP, *self.get_reg(reg)),
+            Jmp(reg) => self.execute_add(&self.get_reg_as_value(reg), &Register::RIP, false),
         }
     }
 
-    fn execute_add(&mut self, src : &Register, dest : &Register, flags : bool) {
+    fn execute_add(&mut self, src_value : &Value, dest : &Register, flags : bool) {
         // TODO: Repeated code with execute_sub
-        let src_value = *self.get_reg(src);
         let dest_value = *self.get_reg(dest);
-        let (res, zero, negative,  overflow) = match src.width() {
+        let (res, zero, negative,  overflow) = match src_value.width() {
             Width::Byte => {
-                let (res, overflow) = (src_value as u8).overflowing_add(dest_value as u8);
+                let (res, overflow) = src_value.value_byte(0).overflowing_add(dest_value as u8);
                 (res as u16, res == 0, (res & 0x80) == 0x80, overflow)
             },
             Width::Word => {
-                let (res, overflow) = src_value.overflowing_add(dest_value);
+                let (res, overflow) = src_value.value_word().overflowing_add(dest_value);
                 (res, res == 0, (res & 0x8000) == 0x8000, overflow)
             }
         };
@@ -79,17 +81,16 @@ impl VM {
         self.set_reg(dest, res);
     }
 
-    fn execute_sub(&mut self, src : &Register, dest : &Register, flags : bool) {
+    fn execute_sub(&mut self, src_value : &Value, dest : &Register, flags : bool) {
         // TODO: Repeated code with execute_add
-        let src_value = *self.get_reg(src);
         let dest_value = *self.get_reg(dest);
-        let (res, zero, negative,  overflow) = match src.width() {
+        let (res, zero, negative,  overflow) = match src_value.width() {
             Width::Byte => {
-                let (res, overflow) = (src_value as u8).overflowing_sub(dest_value as u8);
+                let (res, overflow) = src_value.value_byte(0).overflowing_sub(dest_value as u8);
                 (res as u16, res == 0, (res & 0x80) == 0x80, overflow)
             },
             Width::Word => {
-                let (res, overflow) = src_value.overflowing_sub(dest_value);
+                let (res, overflow) = src_value.value_word().overflowing_sub(dest_value);
                 (res, res == 0, (res & 0x8000) == 0x8000, overflow)
             }
         };
@@ -130,6 +131,10 @@ impl VM {
     pub fn get_reg(&self, reg : &Register) -> &u16 {
         let idx = reg.compile_src() as usize;
         self.registers.get(idx).unwrap()
+    }
+
+    pub fn get_reg_as_value(&self, reg : &Register) -> Value {
+        Value::new(reg.width(), *self.get_reg(reg))
     }
 
     pub fn set_mem(&mut self, addr : u16, value : u8) {
@@ -198,19 +203,29 @@ mod test {
     case!(movr2m_word, 0x0000u16, 2, "mov 0xF337, r7\nmov rb7, [r0]",
         [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0], [(0x0000, 0x37)]);
 
-    case!(add_byte, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd rb8, rb9",
+    case!(add_c2r_byte, 0x0000u16, 2, "mov 0xF337, r8\nadd 0x11, rb8",
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF348, 0, 0, 0], []);
+    case!(add_c2r_word, 0x0000u16, 2, "mov 0xF337, r8\nadd 0x1111, r8",
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0x0448, 0, 0, 0], []);
+    case!(add_r2r_byte, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd rb8, rb9",
         [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x1148, 0, 0], []);
-    case!(add_word, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd r8, r9",
+    case!(add_r2r_word, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd r8, r9",
         [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x0448, 0, 0], []);
     case!(add_byte_overflow_and_zero, 0x0000u16, 3, "mov 0xFF, rb10\nmov 0x01, rb11\nadd rb10, rb11",
         [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0x00], []);
-    case!(add_byte_negative, 0x0000u16, 3, "mov 0x0F, rb10\nmov 0xF0, rb11\nadd rb10, rb11",
+    case!(add_r2r_byte_negative, 0x0000u16, 3, "mov 0x0F, rb10\nmov 0xF0, rb11\nadd rb10, rb11",
         [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0F, 0xFF], []);
-    case!(sub_byte, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub rb0, rb1",
+    case!(sub_c2r_byte, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x11, rb0",
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0xF326, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(sub_c2r_word, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x1111, r0",
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, true), 0x1DDA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(sub_r2r_byte, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub rb0, rb1",
         [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0xF337, 0x1126, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
-    case!(sub_word, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub r0, r1",
+    case!(sub_r2r_word, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub r0, r1",
         [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0xF337, 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
+    case!(ajmp, 0x0000u16, 2, "mov 0xF337, r0\najmp r0",
+        [0, 0xF337, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
         [0, 0xF33D, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
