@@ -11,6 +11,14 @@ pub struct Args {
     /// Disable display
     #[arg(long, default_value_t = false)]
     pub no_display : bool,
+
+    /// Enable debugging
+    #[arg(long, default_value_t = false)]
+    pub debug : bool,
+
+    /// Extra breakpoints to use during execution along with the configuration file
+    #[arg(short, long, num_args = 1.., value_delimiter = ',')]
+    pub breakpoints : Vec<u16>,
 }
 
 impl Args {

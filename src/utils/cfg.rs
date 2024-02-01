@@ -15,6 +15,12 @@ pub struct Config {
     #[serde(default = "_display_default")]
     pub display : bool,
 
+    #[serde(default = "_debug_default")]
+    pub debug : bool,
+
+    #[serde(default = "_breakpoints_default")]
+    pub breakpoints : Vec<u16>,
+
     #[serde(default = "_root_dir_default")]
     pub root_dir : PathBuf,
 }
@@ -32,6 +38,9 @@ impl Config {
         let mut true_in_path = cfg.root_dir.clone();
 				true_in_path.push(cfg.in_path);
         cfg.in_path = true_in_path;
+
+        cfg.breakpoints.append(&mut args.breakpoints.clone());
+        cfg.breakpoints.sort();
 
         Ok(cfg)
     }
@@ -57,6 +66,14 @@ fn _display_default() -> bool {
     true
 }
 
+fn _debug_default() -> bool {
+    false
+}
+
 fn _memory_len_default() -> usize {
     32 * 1024 * 1024 // 32KiB
+}
+
+fn _breakpoints_default() -> Vec<u16> {
+    vec![]
 }
