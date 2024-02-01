@@ -16,6 +16,10 @@ pub struct Args {
     #[arg(long, default_value_t = false)]
     pub debug : bool,
 
+    /// Prompt before beginning execution
+    #[arg(long, default_value_t = false)]
+    pub first_prompt : bool,
+
     /// Extra breakpoints to use during execution along with the configuration file
     #[arg(short, long, num_args = 1.., value_delimiter = ',')]
     pub breakpoints : Vec<u16>,
