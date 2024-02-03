@@ -1,4 +1,4 @@
-#[derive(thiserror::Error, Debug, Clone, PartialEq, Eq)]
+#[derive(thiserror::Error, Debug, Clone, PartialEq)]
 pub enum Error {
     #[error("found invalid opcode {0} (with operands {1})")]
     InvalidOpcode(u8, u8),

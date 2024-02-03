@@ -608,9 +608,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.2.1"
+version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "433de089bd45971eecf4668ee0ee8f4cec17db4f8bd8f7bc3197a6ce37aa7d9b"
+checksum = "824b2ae422412366ba479e8111fd301f7b5faece8149317bb81925979a53f520"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -1010,9 +1010,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.30"
+version = "0.38.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "322394588aaf33c24007e8bb3238ee3e4c5c09c084ab32bc73890b99ff326bca"
+checksum = "6ea3e1a662af26cd7a3ba09c0297a31af215563ecf42817c98df621387f4e949"
 dependencies = [
  "bitflags 2.4.2",
  "errno",
@@ -1043,10 +1043,11 @@ dependencies = [
 [[package]]
 name = "sasm"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/sasm?branch=main#3f37e3733475addb1514884bea421ee0baa84fda"
+source = "git+https://github.com/SmplWorks/sasm?branch=main#679e604ad4df5a83a9968abffccd6019bf7b9970"
 dependencies = [
  "clap",
  "smpl_core_common",
+ "smpl_parser",
  "thiserror",
 ]
 
@@ -1186,10 +1187,15 @@ dependencies = [
 [[package]]
 name = "smpl_core_common"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#a5217271222f9964b4521198b7e8b8729e3f4ccb"
+source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#9fef9539890b6e389211971fe22847cff89e5d52"
 dependencies = [
  "thiserror",
 ]
+
+[[package]]
+name = "smpl_parser"
+version = "0.0.1"
+source = "git+https://github.com/SmplWorks/SmplParser.git?branch=main#ca0f1426e8891069e3adbf09d6c0079f5cf757cb"
 
 [[package]]
 name = "smpl_vm"
@@ -1900,9 +1906,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.5.36"
+version = "0.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "818ce546a11a9986bc24f93d0cdf38a8a1a400f1473ea8c82e59f6e0ffab9249"
+checksum = "a7cad8365489051ae9f054164e459304af2e7e9bb407c958076c8bf4aef52da5"
 dependencies = [
  "memchr",
 ]
