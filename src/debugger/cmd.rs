@@ -10,14 +10,14 @@ pub enum Cmd {
 }
 
 impl Cmd {
-    pub fn prompt() -> Result<Self> {
+    pub fn prompt(last_cmd : Option<Self>) -> Result<Self> {
         inquire::CustomType::<Self>::new("")
-            .with_parser(&Self::parse)
+            .with_parser(&|s| Self::parse(s, last_cmd.clone()))
             .prompt()
             .map_err(|err| Error::External(err.to_string()))
     }
 
-    pub fn parse(s : &str) -> std::result::Result<Self, ()> {
+    pub fn parse(s : &str, last_cmd : Option<Self>) -> std::result::Result<Self, ()> {
         let mut scanner = Scanner::new(tokenize(s).into());
         scanner.scan(|toks| match toks {
             [Token::Ident(cmd)] => match &**cmd {
@@ -25,8 +25,9 @@ impl Cmd {
                 "c" | "cont" | "continue" => ScannerAction::Return(Self::Continue),
                 _ => ScannerAction::None,
             }
+
             _ => ScannerAction::None,
-        }).map(|res| res.unwrap()).map_err(|_| ())
+        }).map(|res| res.or(last_cmd).unwrap()).map_err(|_| ())
     }
 }
 
@@ -39,7 +40,7 @@ impl std::fmt::Display for Cmd {
 impl FromStr for Cmd {
     type Err = ();
 
-    fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
-        Self::parse(s)
+    fn from_str(_: &str) -> std::result::Result<Self, Self::Err> {
+        unreachable!()
     }
 }

@@ -47,14 +47,18 @@ impl Debugger {
         }
     }
 
+    fn action_cmd(&mut self, cmd : Cmd, ignore_breakpoint : bool) -> Result<Break> {
+        match cmd {
+            Cmd::Step => self.step(ignore_breakpoint),
+            Cmd::Continue => self.cont(ignore_breakpoint),
+        }
+    }
+
     pub fn debug(&mut self) -> Result<()> {
-        let mut cmd = if self.first_prompt { Cmd::prompt()? } else { Cmd::Continue };
+        let mut cmd = if self.first_prompt { Cmd::prompt(Some(Cmd::Continue))? } else { Cmd::Continue };
         let mut ignore_breakpoint = false;
         loop {
-            let res = match cmd {
-                Cmd::Step => self.step(ignore_breakpoint)?,
-                Cmd::Continue => self.cont(ignore_breakpoint)?,
-            };
+            let res = self.action_cmd(cmd.clone(), ignore_breakpoint)?;
 
             ignore_breakpoint = false;
             match res {
@@ -66,7 +70,7 @@ impl Debugger {
                 },
             }
 
-            cmd = Cmd::prompt()?;
+            cmd = Cmd::prompt(Some(cmd))?;
         }
     }
 }
