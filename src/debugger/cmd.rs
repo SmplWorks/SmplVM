@@ -25,6 +25,10 @@ impl Cmd {
     }
 
     pub fn parse(s : &str, last_cmd : Option<Self>) -> std::result::Result<Self, ()> {
+        if s.trim().is_empty() {
+            return last_cmd.ok_or(())
+        }
+
         let mut scanner = Scanner::new(tokenize(s).into());
         scanner.scan(|toks| match toks {
             [Token::Ident(cmd)] => match &**cmd {
@@ -55,7 +59,7 @@ impl Cmd {
             }
 
             _ => ScannerAction::None,
-        }).map(|res| res.or(last_cmd).unwrap()).map_err(|_| ())
+        }).map(|res| res.unwrap()).map_err(|_| ())
     }
 }
 
