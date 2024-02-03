@@ -1,9 +1,16 @@
+use smpl_core_common::Register;
 use crate::{vm::VM, utils::{Args, Config, Error, Result}};
 use super::Cmd;
 
+#[derive(Debug, Clone, PartialEq)]
 enum Break {
     Step,
     Point(u16),
+
+    GetAddr(u16, u8),
+    GetReg(Register, u16),
+
+    None,
 }
 
 pub struct Debugger {
@@ -41,6 +48,9 @@ impl Debugger {
             match res {
                 Break::Step => (),
                 Break::Point(_) => return Ok(res),
+                
+                Break::None | Break::GetAddr(_, _) | Break::GetReg(_, _)
+                    => unreachable!("{res:?}"),
             }
 
             res = self.step(false)?;
@@ -51,6 +61,18 @@ impl Debugger {
         match cmd {
             Cmd::Step => self.step(ignore_breakpoint),
             Cmd::Continue => self.cont(ignore_breakpoint),
+
+            Cmd::GetAddr(addr) => Ok(Break::GetAddr(addr, self.vm.get_mem(addr))),
+            Cmd::SetAddr(addr, value) => {
+                self.vm.set_mem(addr, value);
+                Ok(Break::None)
+            }
+
+            Cmd::GetReg(reg) => Ok(Break::GetReg(reg, *self.vm.get_reg(&reg))),
+            Cmd::SetReg(reg, value) => {
+                self.vm.set_reg(&reg, value);
+                Ok(Break::None)
+            }
         }
     }
 
@@ -62,12 +84,18 @@ impl Debugger {
 
             ignore_breakpoint = false;
             match res {
-                Break::Step => (),
+                Break::Step | Break::None => (),
 
                 Break::Point(addr) => {
                     println!("Breakpoint at: {addr}");
                     ignore_breakpoint = true;
                 },
+
+                Break::GetAddr(addr, value) =>
+                    println!("0x{addr:04X}: 0x{value:02X}"),
+
+                Break::GetReg(reg, value) =>
+                    println!("{reg}: 0x{value:04X}"),
             }
 
             cmd = Cmd::prompt(Some(cmd))?;
