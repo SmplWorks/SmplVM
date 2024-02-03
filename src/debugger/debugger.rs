@@ -1,4 +1,5 @@
 use crate::{vm::VM, utils::{Args, Config, Error, Result}};
+use super::Cmd;
 
 enum Break {
     Step,
@@ -46,20 +47,13 @@ impl Debugger {
         }
     }
 
-    fn prompt(&self) -> Result<String> {
-        inquire::Text::new("").prompt()
-            .map_err(|err| Error::External(err.to_string()))
-    }
-
     pub fn debug(&mut self) -> Result<()> {
-        let mut cmd = if self.first_prompt { self.prompt()? } else { "c".to_string() };
+        let mut cmd = if self.first_prompt { Cmd::prompt()? } else { Cmd::Continue };
         let mut ignore_breakpoint = false;
         loop {
-            let res = match &*cmd {
-                "s" | "step" => self.step(ignore_breakpoint)?,
-                "c" | "cont" | "continue" => self.cont(ignore_breakpoint)?,
-
-                cmd => todo!("{cmd}"),
+            let res = match cmd {
+                Cmd::Step => self.step(ignore_breakpoint)?,
+                Cmd::Continue => self.cont(ignore_breakpoint)?,
             };
 
             ignore_breakpoint = false;
@@ -72,7 +66,7 @@ impl Debugger {
                 },
             }
 
-            cmd = self.prompt()?;
+            cmd = Cmd::prompt()?;
         }
     }
 }
