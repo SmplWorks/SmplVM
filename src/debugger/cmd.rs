@@ -34,7 +34,7 @@ impl Cmd {
             [Token::Ident(cmd)] => match &**cmd {
                 "s" | "step" => ScannerAction::Request(Self::Step),
                 "c" | "cont" | "continue" => ScannerAction::Return(Self::Continue),
-                "g" | "get" => ScannerAction::Require,
+                "g" | "get" | "set" => ScannerAction::Require,
                 _ => ScannerAction::None,
             }
 
@@ -74,5 +74,34 @@ impl FromStr for Cmd {
 
     fn from_str(_: &str) -> std::result::Result<Self, Self::Err> {
         unreachable!()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    macro_rules! ok_cases {
+        ($ident:ident, $cases:expr, $expect:expr) => {
+            #[test]
+            fn $ident() {
+                for case in $cases {
+                    assert_eq!(Cmd::parse(case, None), Ok($expect));
+                }
+            }
+        };
+    }
+
+    ok_cases!(step, ["s", "step"], Cmd::Step);
+    ok_cases!(r#continue, ["c", "cont", "continue"], Cmd::Continue);
+    ok_cases!(getaddr, ["g 0x1234", "get 0x1234"], Cmd::GetAddr(0x1234));
+    ok_cases!(setaddr, ["s 0x1234 0x56", "set 0x1234 0x56"], Cmd::SetAddr(0x1234, 0x56));
+    ok_cases!(getreg, ["g r0", "get r0"], Cmd::GetReg(Register::r0()));
+    ok_cases!(setreg, ["s r0 0x1234", "set r0 0x1234"], Cmd::SetReg(Register::r0(), 0x1234));
+
+    #[test]
+    fn prev() {
+        assert_eq!(Cmd::parse("", Some(Cmd::Step)), Ok(Cmd::Step));
+        assert_eq!(Cmd::parse("", Some(Cmd::Continue)), Ok(Cmd::Continue));
     }
 }
