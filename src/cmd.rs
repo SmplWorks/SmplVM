@@ -24,6 +24,7 @@ impl Cmd {
             .map_err(|err| Error::External(err.to_string()))
     }
 
+    #[allow(clippy::result_unit_err)]
     pub fn parse(s : &str, last_cmd : Option<Self>) -> std::result::Result<Self, ()> {
         if s.trim().is_empty() {
             return last_cmd.ok_or(())

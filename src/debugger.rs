@@ -1,6 +1,5 @@
 use smpl_core_common::Register;
-use crate::{vm::VM, utils::{Args, Config, Error, Result}};
-use super::Cmd;
+use crate::{VM, Cmd, utils::{Args, Config, Result}};
 
 #[derive(Debug, Clone, PartialEq)]
 enum Break {

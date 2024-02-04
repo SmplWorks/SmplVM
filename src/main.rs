@@ -1,16 +1,14 @@
 mod vm;
+mod decompile;
+mod display;
+mod debugger;
+mod cmd;
+pub mod utils;
 
 pub use vm::VM;
-
-mod decompile;
 pub use decompile::decompile;
-
-mod display;
-
-mod debugger;
 pub use debugger::Debugger;
-
-pub mod utils;
+pub use cmd::Cmd;
 
 use std::{path::Path, sync::{Arc, Mutex}};
 

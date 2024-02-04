@@ -70,7 +70,7 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
 
-    let len = inst.as_ref().map_or(2, |inst| inst.len() as u16);
+    let len = inst.as_ref().map_or(2, |inst| inst.len());
     (inst, len)
 }
 

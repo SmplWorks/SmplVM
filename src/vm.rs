@@ -35,7 +35,8 @@ impl VM {
 
     pub fn execute_next(&mut self) -> Result<()> {
         let inst = self.decompile_next()?;
-        Ok(self.execute_instr(&inst))
+        self.execute_instr(&inst);
+        Ok(())
     }
 
     pub fn execute_instr(&mut self, inst : &Instruction) {
@@ -44,10 +45,10 @@ impl VM {
             Nop => (),
             DB(_) => unreachable!(),
 
-            MovC2R(value, dest) => self.set_reg(&dest, value.value_word()),
-            MovR2R(src, dest) => self.set_reg(&dest, *self.get_reg(src)),
+            MovC2R(value, dest) => self.set_reg(dest, value.value_word()),
+            MovR2R(src, dest) => self.set_reg(dest, *self.get_reg(src)),
             MovM2R(src, dest)
-                => self.set_reg(&dest, self.get_mem(*self.get_reg(src)) as u16),
+                => self.set_reg(dest, self.get_mem(*self.get_reg(src)) as u16),
             MovR2M(src, dest)
                 => self.set_mem(*self.get_reg(dest), *self.get_reg(src) as u8),
 
@@ -102,7 +103,7 @@ impl VM {
     }
 
     pub fn decompile_next(&mut self) -> Result<Instruction> {
-        let (inst, skip) = decompile(&self, *self.get_reg(&Register::RIP));
+        let (inst, skip) = decompile(self, *self.get_reg(&Register::RIP));
         self.set_reg(&Register::RIP, self.get_reg(&Register::RIP).wrapping_add(skip));
         inst
     }
@@ -112,7 +113,7 @@ impl VM {
     }
 
     pub fn calc_flags(zero : bool, negative : bool, overflow : bool) -> u16 {
-        ((zero as u16) << 0) | ((negative as u16) << 1) | ((overflow as u16) << 2)
+        (zero as u16) | ((negative as u16) << 1) | ((overflow as u16) << 2)
     }
 
     pub fn set_reg(&mut self, reg : &Register, value : u16) {

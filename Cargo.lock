@@ -1043,7 +1043,7 @@ dependencies = [
 [[package]]
 name = "sasm"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/sasm?branch=main#679e604ad4df5a83a9968abffccd6019bf7b9970"
+source = "git+https://github.com/SmplWorks/sasm?branch=main#b5c0df7e7e61a48e7f5e1cf88a48d3ac0d6008f8"
 dependencies = [
  "clap",
  "smpl_core_common",
@@ -1187,7 +1187,7 @@ dependencies = [
 [[package]]
 name = "smpl_core_common"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#9fef9539890b6e389211971fe22847cff89e5d52"
+source = "git+https://github.com/SmplWorks/SmplCore-common.git?branch=main#09bdfd261dae1642afbe5e7f13321451265b6888"
 dependencies = [
  "thiserror",
 ]
@@ -1195,7 +1195,7 @@ dependencies = [
 [[package]]
 name = "smpl_parser"
 version = "0.0.1"
-source = "git+https://github.com/SmplWorks/SmplParser.git?branch=main#ca0f1426e8891069e3adbf09d6c0079f5cf757cb"
+source = "git+https://github.com/SmplWorks/SmplParser.git?branch=main#e96d893798f78c169c53136f9f01e341086077bf"
 
 [[package]]
 name = "smpl_vm"
