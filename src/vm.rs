@@ -59,6 +59,8 @@ impl VM {
             
             AJmp(reg) => self.set_reg(&Register::RIP, *self.get_reg(reg)),
             Jmp(reg) => self.execute_add(&self.get_reg_as_value(reg), &Register::RIP, false),
+
+            _ => todo!("{inst:?}"),
         }
     }
 
@@ -193,45 +195,45 @@ mod test {
     case!(reset, 0xF337u16, 0, "", [0, 0xF337u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(nop, 0x0000u16, 1, "nop", [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
-    case!(movc2r_byte, 0x0000u16, 1, "mov 0xF3, rb0", [0, 0x0004u16, 0, 0, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
-    case!(movc2r_word, 0x0000u16, 1, "mov 0xF337, r1", [0, 0x0004u16, 0, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movc2r_byte, 0x0000u16, 1, "mov 0xF3, rb0", [0, 0x0004u16, 0, 0, 0, 0, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(movc2r_word, 0x0000u16, 1, "mov 0xF337, r1", [0, 0x0004u16, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(movr2r_byte, 0x0000u16, 2, "mov 0xF3, rb2\nmov rb2, rb3",
-        [0, 0x0006u16, 0, 0, 0, 0, 0x00F3, 0x00F3, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0x00F3, 0x00F3, 0, 0, 0, 0, 0, 0], []);
     case!(movr2r_word, 0x0000u16, 2, "mov 0xF337, r4\nmov r4, r5",
-        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0xF337, 0xF337, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0xF337, 0, 0, 0, 0], []);
     case!(movm2r_word, 0x0000u16, 1, "mov [r0], rb6",
-        [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, Instruction::movm2r(Register::r0(), Register::rb6()).unwrap().opcode() as u16, 0, 0, 0, 0, 0], []);
+        [0, 0x0002u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Instruction::movm2r(Register::r0(), Register::rb6()).unwrap().opcode() as u16, 0, 0, 0], []);
     case!(movr2m_word, 0x0000u16, 2, "mov 0xF337, r7\nmov rb7, [r0]",
-        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0], [(0x0000, 0x37)]);
+        [0, 0x0006u16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0, 0], [(0x0000, 0x37)]);
 
     case!(add_c2r_byte, 0x0000u16, 2, "mov 0xF337, r8\nadd 0x11, rb8",
-        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF348, 0, 0, 0], []);
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF348, 0], []);
     case!(add_c2r_word, 0x0000u16, 2, "mov 0xF337, r8\nadd 0x1111, r8",
-        [0, 0x0008u16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0x0448, 0, 0, 0], []);
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0448, 0], []);
     case!(add_r2r_byte, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd rb8, rb9",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x1148, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x1148], []);
     case!(add_r2r_word, 0x0000u16, 3, "mov 0xF337, r8\nmov 0x1111, r9\nadd r8, r9",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x0448, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xF337, 0x0448], []);
 
-    case!(add_byte_overflow_and_zero, 0x0000u16, 3, "mov 0xFF, rb10\nmov 0x01, rb11\nadd rb10, rb11",
-        [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0x00], []);
-    case!(add_r2r_byte_negative, 0x0000u16, 3, "mov 0x0F, rb10\nmov 0xF0, rb11\nadd rb10, rb11",
-        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0F, 0xFF], []);
+    case!(add_byte_overflow_and_zero, 0x0000u16, 3, "mov 0xFF, rb0\nmov 0x01, rb1\nadd rb0, rb1",
+        [0, 0x000Au16, 0, VM::calc_flags(true, false, true), 0, 0, 0xFF, 0x00, 0, 0, 0, 0, 0, 0, 0, 0], []);
+    case!(add_r2r_byte_negative, 0x0000u16, 3, "mov 0x0F, rb0\nmov 0xF0, rb1\nadd rb0, rb1",
+        [0, 0x000Au16, 0, VM::calc_flags(false, true, false), 0, 0, 0x0F, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(sub_c2r_byte, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x11, rb0",
-        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0xF326, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x0008u16, 0, VM::calc_flags(false, false, false), 0, 0, 0xF326, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_c2r_word, 0x0000u16, 2, "mov 0xF337, r0\nsub 0x1111, r0",
-        [0, 0x0008u16, 0, VM::calc_flags(false, true, false), 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x0008u16, 0, VM::calc_flags(false, true, false), 0, 0, 0xE226, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_r2r_byte, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub rb0, rb1",
-        [0, 0x000Au16, 0, VM::calc_flags(false, true, true), 0xF337, 0x11DA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, true, true), 0, 0, 0xF337, 0x11DA, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(sub_r2r_word, 0x0000u16, 3, "mov 0xF337, r0\nmov 0x1111, r1\nsub r0, r1",
-        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0xF337, 0x1DDA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0x000Au16, 0, VM::calc_flags(false, false, true), 0, 0, 0xF337, 0x1DDA, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(ajmp, 0x0000u16, 2, "mov 0xF337, r0\najmp r0",
-        [0, 0xF337, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0xF337, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
     case!(jmp, 0x0000u16, 2, "mov 0xF337, r0\njmp r0",
-        [0, 0xF33D, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
+        [0, 0xF33D, 0, 0, 0, 0, 0xF337, 0, 0, 0, 0, 0, 0, 0, 0, 0], []);
 
     case!(basic, 0x0000, 15, &std::fs::read_to_string(std::path::Path::new("./examples/basic.sasm")).unwrap(),
-        [0, 0x001C, 0, VM::calc_flags(false, true, true), 0x0CF3, 0x6000, 0xF31A, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0, 0, 0], [(256, 0xF3)]);
+        [0, 0x001C, 0, VM::calc_flags(false, true, true), 0, 0, 0x0CF3, 0x6000, 0xF31A, 256, 0xF3, -2i16 as u16, 0, 0, 0, 0], [(256, 0xF3)]);
 }

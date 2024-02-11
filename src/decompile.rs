@@ -25,47 +25,47 @@ pub fn decompile(vm : &VM, addr : u16) -> (Result<Instruction>, u16) {
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x06 => Ok(MovR2M(
+        0x07 => Ok(MovR2M(
             Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
 
-        0x07 => Ok(AddC2R(
+        0x0B => Ok(AddC2R(
             Value::byte(vm.get_mem(addr + 2)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x08 => Ok(AddC2R(
+        0x0C => Ok(AddC2R(
             Value::word((vm.get_mem(addr + 2) as u16) | ((vm.get_mem(addr + 3) as u16) << 8)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
-        0x09 => Ok(AddR2R(
+        0x0D => Ok(AddR2R(
             Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x0A => Ok(AddR2R(
+        0x0E => Ok(AddR2R(
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
 
-        0x0B => Ok(SubC2R(
+        0x0F => Ok(SubC2R(
             Value::byte(vm.get_mem(addr + 2)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x0C => Ok(SubC2R(
+        0x10 => Ok(SubC2R(
             Value::word((vm.get_mem(addr + 2) as u16) | ((vm.get_mem(addr + 3) as u16) << 8)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
-        0x0D => Ok(SubR2R(
+        0x11 => Ok(SubR2R(
             Register::from_src(Width::Byte, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Byte, vm.get_mem(addr + 1))
         )),
-        0x0E => Ok(SubR2R(
+        0x12 => Ok(SubR2R(
             Register::from_src(Width::Word, vm.get_mem(addr + 1)),
             Register::from_dest(Width::Word, vm.get_mem(addr + 1))
         )),
         
-        0x0F => Ok(AJmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
-        0x10 => Ok(Jmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
+        0x27 => Ok(AJmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
+        0x28 => Ok(Jmp(Register::from_src(Width::Word, vm.get_mem(addr + 1)))),
 
         opcode => Err(Error::InvalidOpcode(opcode, vm.get_mem(addr + 1))),
     };
@@ -119,11 +119,11 @@ mod test {
     case!(movm2r, "mov [r6], rb7");
     case!(movr2m, "mov rb8, [r9]");
 
-    case!(addc2r_byte, "add 0xF3, rb11");
+    case!(addc2r_byte, "add 0xF3, rb1");
     case!(addc2r_word, "add 0xF337, r1");
-    case!(addr2r_byte, "add rb10, rb11");
+    case!(addr2r_byte, "add rb0, rb1");
     case!(addr2r_word, "add r0, r1");
-    case!(subc2r_byte, "sub 0xF3, rb11");
+    case!(subc2r_byte, "sub 0xF3, rb1");
     case!(subc2r_word, "sub 0xF337, r1");
     case!(subr2r_byte, "sub r0, r1");
     case!(subr2r_word, "sub r0, r1");
